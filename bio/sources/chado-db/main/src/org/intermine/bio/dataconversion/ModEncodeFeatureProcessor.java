@@ -89,6 +89,11 @@ public class ModEncodeFeatureProcessor extends SequenceProcessor
                     "transcribed")));
     private static final String SUB_3154_TITLE = "MXEMB_N2_RNA_EXPRESSION";
     //    private static final String MODENCODE_SOURCE_NAME = "modENCODE";
+    private static final List<String> TEMP_WORM_EXCEPTIONS = Arrays.asList(
+            "CDS", "Transcript");
+    private static final Integer CELE_TAXID = 6239;
+
+
 
     /**
      * Create a new ModEncodeFeatureProcessor.
@@ -207,10 +212,23 @@ public class ModEncodeFeatureProcessor extends SequenceProcessor
     protected Item makeLocation(int start, int end, int strand, FeatureData srcFeatureData,
             FeatureData featureData, int taxonId, int featureId)
         throws ObjectStoreException {
+
+
         // if a common feature, do it only once..
         if (commonFeaturesMap.containsKey(featureId)) {
-            return null;
+            // but not if this is CDS or transcript for worm, until we get them from wormbase
+            if (taxonId != CELE_TAXID) {
+                return null;
+            }
+
+            if (!TEMP_WORM_EXCEPTIONS.contains(featureData.getInterMineType())) {
+                return null;
+            }
+
+            LOG.info("COMMONFEAT: " + featureId + "|" + featureData.getInterMineType() +
+                    "|" + featureData.getChadoFeatureUniqueName() + "|" + start + "-" + end);
         }
+
         Item location = getChadoDBConverter().makeLocation(srcFeatureData.getItemIdentifier(),
                 featureData.getItemIdentifier(),
                 start, end, strand, taxonId);
